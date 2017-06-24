@@ -18,9 +18,15 @@ var roleUpgrader = {
       }
     }
     else {
-      if(creep.withdraw(Game.spawns['Spawn1'], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(Game.spawns['Spawn1']);
-      }
+        var targets = creep.room.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) &&
+                    structure.energy > structure.energyCapacity / 2;
+            }
+        })
+        if(creep.withdraw(targets[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(targets[0]);
+        }
     }
   }
 };

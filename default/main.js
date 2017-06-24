@@ -14,6 +14,9 @@ module.exports.loop = function () {
         }
     }
 
+    Memory.build = true;
+    Memory.upgrade = true;
+
     // A List of all Energy Sources in the Room (currently limited to 1 Room)
     if (Memory.energy_sources.length < 1)
     {
@@ -27,7 +30,7 @@ module.exports.loop = function () {
     }
 
     /**
-     * Now we need to assign creeps to sources
+     * debug lines
      */
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
     var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
@@ -52,6 +55,8 @@ module.exports.loop = function () {
      * Creeps respawn logic
      */
     if(harvesters.length < Memory.energy_sources.length) {
+        Memory.build = false;
+        Memory.upgrade = false;
         // find a suitable energy source for the harvester
         for (var i = 0; i < Memory.energy_sources.length; i++)
         {
@@ -70,14 +75,21 @@ module.exports.loop = function () {
         }
     } else {
         if (collectors.length < (harvesters.length*2)) {
+            if (collectors.length < harvesters) {
+                Memory.build = false;
+                Memory.upgrade = false;
+            }
+            else {
+              Memory.build = false;
+            }
             Game.spawns['Spawn1'].createCreep([CARRY, CARRY, MOVE, MOVE], undefined, {role: 'collector'});
             console.log('Trying to Spawn new Collector');
         }
-        if (upgraders.length < 2 && collectors.length > 2) {
+        if (upgraders.length < 2 && collectors.length >=  harvesters.length*2) {
             Game.spawns['Spawn1'].createCreep([WORK, CARRY, CARRY, MOVE], undefined, {role: 'upgrader'});
             console.log('Trying to Spawn new Upgrader');
         }
-        if (builders.length < 2){
+        if (builders.length < 1 && collectors.length >= harvesters.length*2){
             Game.spawns['Spawn1'].createCreep([WORK, WORK, CARRY, MOVE], undefined, {role: 'builder'});
             console.log('Trying to Spawn new Builder');
         }
@@ -92,7 +104,6 @@ module.exports.loop = function () {
         }
     }
 
-
     for(var creepname in Game.creeps) {
         var creep = Game.creeps[creepname];
 
@@ -100,10 +111,20 @@ module.exports.loop = function () {
             roleHarvester.run(creep);
         }
         if(creep.memory.role === 'upgrader') {
-            roleUpgrader.run(creep);
+            if (Memory.upgrade) {
+                roleUpgrader.run(creep);
+            }
+            else {
+              console.log("upgrading is stopped");
+            }
         }
         if (creep.memory.role === 'builder') {
-            roleBuilder.run(creep);
+            if (Memory.build) {
+                roleBuilder.run(creep);
+            }
+            else {
+                console.log("building is stopped");
+            }
         }
         if (creep.memory.role === 'collector') {
             roleCollector.run(creep);
