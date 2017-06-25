@@ -14,9 +14,25 @@ module.exports.loop = function () {
         }
     }
 
+    /**
+     * debug lines
+     */
+    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
+    var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
+    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
+    var collectors = _.filter(Game.creeps, (creep) => creep.memory.role == 'collector');
+    var construction_sites = Game.spawns['Spawn1'].room.find(FIND_CONSTRUCTION_SITES);
+    console.log('Harvesters: ' + harvesters.length +
+        ' | Collectors: ' + collectors.length +
+        ' | Upgraders: ' + upgraders.length +
+        ' | Builders: ' + builders.length);
+
     Memory.build = true;
     Memory.upgrade = true;
 
+    /**
+     * structures logic
+     */
     // A List of all Energy Sources in the Room (currently limited to 1 Room)
     if (Memory.energy_sources.length < 1)
     {
@@ -28,28 +44,18 @@ module.exports.loop = function () {
 
         });
     }
+    const extensions = Game.spawns['Spawn1'].room.find(FIND_MY_STRUCTURES, {
+        filter: { structureType: STRUCTURE_EXTENSION }
+    });
 
-    /**
-     * debug lines
-     */
-    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
-    var collectors = _.filter(Game.creeps, (creep) => creep.memory.role == 'collector');
-    console.log('Harvesters: ' + harvesters.length +
-        ' | Collectors: ' + collectors.length +
-        ' | Upgraders: ' + upgraders.length +
-        ' | Builders: ' + builders.length);
+    if(extensions < 4) {
+        // find a place for the 4 Spawn Extensions relative to my spawn, will happen after the room controller is upgraded to level 2
+        var pos = Game.spawns['Spawn1'].pos;
+        Game.rooms[pos.roomName].createConstructionSite(pos.x, pos.y + 1, STRUCTURE_EXTENSION);
+    } else if (extensions)
+    {
 
-
-    // find a place for the 4 Spawn Extensions relative to my spawn, will happen after the room controller is upgraded to level 2
-    var pos = Game.spawns['Spawn1'].pos;
-    Game.rooms[pos.roomName].createConstructionSite(pos.x, pos.y + 1, STRUCTURE_EXTENSION);
-    Game.rooms[pos.roomName].createConstructionSite(pos.x, pos.y - 1, STRUCTURE_EXTENSION);
-    Game.rooms[pos.roomName].createConstructionSite(pos.x + 1, pos.y, STRUCTURE_EXTENSION);
-    Game.rooms[pos.roomName].createConstructionSite(pos.x - 1, pos.y, STRUCTURE_EXTENSION);
-
-
+    }
 
     /**
      * Creeps respawn logic
@@ -80,7 +86,7 @@ module.exports.loop = function () {
                 Memory.upgrade = false;
             }
             else {
-              Memory.build = false;
+                Memory.build = false;
             }
             Game.spawns['Spawn1'].createCreep([CARRY, CARRY, MOVE, MOVE], undefined, {role: 'collector'});
             console.log('Trying to Spawn new Collector');
@@ -89,13 +95,13 @@ module.exports.loop = function () {
             Game.spawns['Spawn1'].createCreep([WORK, CARRY, CARRY, MOVE], undefined, {role: 'upgrader'});
             console.log('Trying to Spawn new Upgrader');
         }
-        if (builders.length < 1 && collectors.length >= harvesters.length*2){
+        if (builders.length < 1 && collectors.length >= harvesters.length*2 && construction_sites.length > 0){
             Game.spawns['Spawn1'].createCreep([WORK, WORK, CARRY, MOVE], undefined, {role: 'builder'});
             console.log('Trying to Spawn new Builder');
         }
     }
 
-  /* Check if the assigned are still alive */
+    /* Check if the assigned are still alive */
     for (var i = 0; i < Memory.energy_sources.length; i++) {
         if (Game.creeps[Memory.energy_sources[i][2]] == undefined)
         {
@@ -115,7 +121,7 @@ module.exports.loop = function () {
                 roleUpgrader.run(creep);
             }
             else {
-              console.log("upgrading is stopped");
+                console.log("upgrading is stopped");
             }
         }
         if (creep.memory.role === 'builder') {
